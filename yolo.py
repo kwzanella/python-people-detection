@@ -15,10 +15,10 @@ from ultralytics import YOLO
 
 if __name__ == "__main__":
     # Load the model
-    model = YOLO('yolov8n.pt')  # load a pretrained model
+    model = YOLO("data/yolov8n.pt")  # load a pretrained model
 
     # Perform inference
-    results = model('../test.jpg')
+    results = model("data/test.jpg")
 
     # Print the results
-    results.print()
+    print(results)
