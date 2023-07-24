@@ -2,11 +2,9 @@ import cv2
 from ultralytics import YOLO
 
 # set supported camera resolution here
-FRAME_WIDTH = 400
-FRAME_HEIGHT = 400
-
-# number of frames to skip between detections
-SKIP_FRAMES = 5
+# must be multiple of 32 (320x320, 416x416, 448x448, 608x608, etc)
+FRAME_WIDTH = 416
+FRAME_HEIGHT = 416
 
 def process_frame(model, frame):
     # Run YOLOv8 inference on the frame
@@ -23,22 +21,15 @@ if __name__ == "__main__":
     camera.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
     camera.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
 
-    frame_count = 0
     try:
-        while True:
+        while camera.isOpened():
             is_read, frame = camera.read()
 
             if is_read:
-                frame_count += 1
-                if frame_count % SKIP_FRAMES == 0:  # only process and show frame after "SKIP_FRAMES" amount
-                    cv2.imshow("Live People Detection", process_frame(model, frame))
-                    frame_count = 0
-
+                cv2.imshow("Live People Detection", process_frame(model, frame))
                 # press "q" to exit window
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
-            else:
-                break
             
     except KeyboardInterrupt:
         print("Interrupted by user")
