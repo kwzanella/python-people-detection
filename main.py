@@ -1,4 +1,5 @@
 import cv2
+from multiprocessing import Process, Queue
 from ultralytics import YOLO
 
 # set supported camera resolution here
@@ -6,12 +7,31 @@ from ultralytics import YOLO
 FRAME_WIDTH = 416
 FRAME_HEIGHT = 416
 
-def process_frame(model, frame):
-    # Run YOLOv8 inference on the frame
-    results = model.predict(source=frame, imgsz=FRAME_WIDTH, classes=0, device="cpu", verbose=False)
-    annotated_frame = results[0].plot()
-    
-    return annotated_frame
+"""
+Producer/Consumer Architecture:
+- https://www.ni.com/en/support/documentation/supplemental/21/producer-consumer-architecture-in-labview0.html
+"""
+
+def producer(queue, camera):
+    try:
+        while camera.isOpened():
+            is_read, frame = camera.read()
+            if is_read:
+                queue.put(frame)
+    finally:
+        camera.release()
+
+
+def consumer(queue, model):
+    try:
+        while True:
+            results = model.predict(source=queue.get(), imgsz=FRAME_WIDTH, classes=0, device="cpu", verbose=False)
+            cv2.imshow("Live People Detection", results[0].plot())
+
+            if cv2.waitKey(1) & 0xFF == ord("q"):  # press "q" to exit window
+                break
+    finally:
+        cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
@@ -21,19 +41,28 @@ if __name__ == "__main__":
     camera.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
     camera.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
 
-    try:
-        while camera.isOpened():
-            is_read, frame = camera.read()
+    queue = Queue()
 
-            if is_read:
-                cv2.imshow("Live People Detection", process_frame(model, frame))
-                # press "q" to exit window
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
-            
+    producer_process = Process(target=producer, args=(queue, camera))
+    consumer_process = Process(target=consumer, args=(queue, model))
+
+    producer_process.start()
+    consumer_process.start()
+
+    try:
+        producer_process.join()
+        consumer_process.join()
+        
     except KeyboardInterrupt:
-        print("Interrupted by user")
+        print("Interrupted by user, shutting down...")
         
     finally:
-        camera.release()
+        # calling join after terminate is important for resouce cleanup
+        producer_process.terminate()
+        consumer_process.terminate()
+        
+        producer_process.join()
+        consumer_process.join()
+        
         cv2.destroyAllWindows()
+        camera.release()
