@@ -1,14 +1,17 @@
 import cv2
-
 from multiprocessing import Process, Queue
 from queue import Empty
 from ultralytics import YOLO
 
+"""
+OpenCV is not thread safe. Therefore it is safer to keep all the cv2 code in a single process
 
-# OpenCV is not thread safe. Therefore it is safer to keep all the cv2 code in a single process
+Ultralytics's YOLOv8 uses the COCO dataset. That is why "classes=0" is used, because it represents "people" in the dataset
+https://cocodataset.org/#home
 
-# Producer/Consumer Architecture:
-# https://www.ni.com/en/support/documentation/supplemental/21/producer-consumer-architecture-in-labview0.html
+Producer/Consumer Architecture:
+https://www.ni.com/en/support/documentation/supplemental/21/producer-consumer-architecture-in-labview0.html
+"""
 
 # Set supported camera resolution here
 # Must be multiple of 32 (320x320, 416x416, 448x448, 608x608, etc)
@@ -65,12 +68,12 @@ if __name__ == "__main__":
     producer_process.start()
     consumer_process.start()
 
-    cv2.namedWindow("Live People Detection", cv2.WINDOW_NORMAL)
+    cv2.namedWindow("Person Detection", cv2.WINDOW_NORMAL)
     try:
         while True:
             try:
                 result = queue_out.get(timeout=1)  # wait for up to one second for an item to become available
-                cv2.imshow("Live People Detection", result)
+                cv2.imshow("Person Detection", result)
                 cv2.waitKey(1)  # cv2 doesn't work without this
             except Empty:
                 continue
