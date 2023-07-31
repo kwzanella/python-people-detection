@@ -4,7 +4,8 @@ from queue import Empty
 from ultralytics import YOLO
 
 """
-OpenCV is not thread safe. Therefore it is safer to keep all the cv2 code in a single process
+OpenCV's thread safety issues primarily concern the GUI functions, not the video capture functions.
+Therefore, it shouldn't be a problem to keep "VideoCapture" methods inside a different process.
 
 Ultralytics's YOLOv8 uses the COCO dataset. That is why "classes=0" is used, because it represents "people" in the dataset
 https://cocodataset.org/#home
@@ -22,7 +23,7 @@ QUEUE_SIZE = 20
 
 
 # Generates frames from device camera
-def producer(queue, camera):
+def producer(queue: Queue, camera: cv2.VideoCapture) -> None:
     try:
         while camera.isOpened():
             is_read, frame = camera.read()
@@ -34,7 +35,7 @@ def producer(queue, camera):
         
         
 # Uses frames as input to YOLO model predict
-def consumer(queue_in, queue_out, model):
+def consumer(queue_in: Queue, queue_out: Queue, model: YOLO) -> None:
     try:
         while True:
             results = model.predict(source=queue_in.get(), imgsz=RESOLUTION[0], classes=0, device="cpu", verbose=False)
@@ -46,7 +47,7 @@ def consumer(queue_in, queue_out, model):
 
 # Creates new ONNX model based on PyTorch (pt) model
 # If pt model is not found, it will automatically download it
-def export_new_model():
+def export_new_model() -> None:
     model = YOLO(model="models/yolov8n.pt", task="detect")
     model.export(format="onnx", imgsz=RESOLUTION[0], classes=0, dynamic=False, simplify=True)
 
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     producer_process.start()
     consumer_process.start()
 
-    cv2.namedWindow("Person Detection", cv2.WINDOW_NORMAL)
+    cv2.namedWindow("Person Detection", cv2.WINDOW_AUTOSIZE)
     try:
         while True:
             try:
