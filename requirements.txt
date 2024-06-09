@@ -28,7 +28,7 @@ nvidia-cusolver-cu11==11.4.0.1
 nvidia-cusparse-cu11==11.7.4.91
 nvidia-nccl-cu11==2.14.3
 nvidia-nvtx-cu11==11.7.91
-onnx==1.14.0
+onnx==1.16.0
 onnxruntime==1.15.1
 opencv-python==4.8.0.74
 packaging==23.1
