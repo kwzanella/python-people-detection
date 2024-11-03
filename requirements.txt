@@ -46,7 +46,7 @@ scipy==1.11.1
 seaborn==0.12.2
 six==1.16.0
 sympy==1.12
-torch==2.0.1
+torch==2.2.0
 torchvision==0.15.2
 tqdm==4.66.3
 triton==2.0.0
